@@ -12,4 +12,5 @@ from app import forms, views
 urlpatterns = [
     path('', views.home, name='home'),
     path('lobby/', views.lobby, name='lobby'),
+    path('game/', views.game, name='game'),
 ]

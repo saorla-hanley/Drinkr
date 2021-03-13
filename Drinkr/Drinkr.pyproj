@@ -34,6 +34,9 @@
   <ItemGroup>
     <Compile Include="app\forms.py" />
     <Compile Include="app\models.py" />
+    <Compile Include="TCP\client.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="app\tests.py" />
     <Compile Include="app\views.py" />
     <Compile Include="app\__init__.py" />
@@ -43,10 +46,20 @@
     <Compile Include="Drinkr\settings.py" />
     <Compile Include="Drinkr\urls.py" />
     <Compile Include="Drinkr\wsgi.py" />
+    <Compile Include="TCP\constants.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TCP\Entities\client_data.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TCP\message.py">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="app\" />
     <Folder Include="app\migrations\" />
+    <Folder Include="TCP\" />
     <Folder Include="app\static\" />
     <Folder Include="app\static\app\" />
     <Folder Include="app\static\app\content\" />
@@ -55,6 +68,7 @@
     <Folder Include="app\templates\" />
     <Folder Include="app\templates\app\" />
     <Folder Include="Drinkr\" />
+    <Folder Include="TCP\Entities\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="app\templates\app\game.html" />

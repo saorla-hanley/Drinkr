@@ -13,17 +13,12 @@ class GameHostDetailsForm(forms.Form):
                                       'placeholder': 'Display name'}))
 
     gamePassword = forms.CharField(label=_("Password"),
+                                   required=False,
                                    widget=forms.TextInput({
                                        'class': 'form-control',
                                        'placeholder':'Password'}))
 
 class GameJoinDetailsForm(forms.Form):
-    gameCode = forms.CharField(max_length=8,
-                               label=_("Room Code"),
-                               widget=forms.TextInput({
-                                      'class': 'form-control',
-                                      'placeholder': 'ABC123YZ'}))
-
     displayName = forms.CharField(max_length=254,
                                   label=_("Display Name"),
                                   widget=forms.TextInput({
@@ -31,6 +26,13 @@ class GameJoinDetailsForm(forms.Form):
                                     'placeholder': 'Display name'}))
 
     gamePassword = forms.CharField(label=_("Password"),
+                                   required=False,
                                    widget=forms.TextInput({
                                        'class': 'form-control',
                                        'placeholder':'Password'}))
+
+    gameCode = forms.CharField(max_length=8,
+                               label=_("Room Code"),
+                               widget=forms.TextInput({
+                                      'class': 'form-control',
+                                      'placeholder': 'ABC123YZ'}))

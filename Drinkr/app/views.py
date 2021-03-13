@@ -3,9 +3,12 @@ Definition of views.
 """
 
 from datetime import datetime
-from django.shortcuts import render
-from django.http import HttpRequest, HttpResponseRedirect
+from django.shortcuts import render, redirect
+from django.http import HttpRequest
 from .forms import GameHostDetailsForm, GameJoinDetailsForm
+from TCP.client import Client, current_client
+from TCP.Message import Message
+from TCP.constants import server_command_types
 
 def home(request):
     assert isinstance(request, HttpRequest)
@@ -19,8 +22,7 @@ def home(request):
             request.session['is_host'] = False
             request.session['join_data'] = request.POST
 
-        # Need to validate
-        return HttpResponseRedirect('lobby')
+        return redirect('lobby')
 
     else:
         host_form = GameHostDetailsForm()
@@ -40,12 +42,31 @@ def home(request):
 
 def lobby(request):
     assert isinstance(request, HttpRequest)
+    
+    if request.method == 'POST':
+        # To do:  validate post
 
-    username = "unknown"
-    if bool(request.session['is_host']) == True:
-        username = GameHostDetailsForm(request.session['host_data']).data['displayName']
+        # To do:  connect to tcp server
+        try:
+            if 'enter' in request.POST:
+                current_client.connect("127.0.0.1", 5555)
+                current_client.send(Message(server_command_types.Welcome, current_client.client_data.to_bytes()))
+
+                current_client.send(Message(server_command_types.Log_Users))
+                return redirect('game')
+        except:
+            print("Could not connect to server")
+
     else:
-        username = GameJoinDetailsForm(request.session['join_data']).data['displayName']
+        is_host = bool(request.session['is_host'])
+        if is_host:
+            form = GameHostDetailsForm(request.session['host_data'])
+        else:
+            form = GameJoinDetailsForm(request.session['join_data'])
+    
+        username = form.data['displayName']
+        current_client.set_data(is_host, username)
+
 
     return render(
         request,
@@ -57,8 +78,11 @@ def lobby(request):
         }
     )
 
+
 def game(request):
     assert isinstance(request, HttpRequest)
+
+
     return render(
         request,
         'app/game.html',
