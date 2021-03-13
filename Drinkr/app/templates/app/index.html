@@ -1,0 +1,43 @@
+{% extends "app/layout.html" %}
+
+{% block content %}
+
+<script type="text/javascript">
+    function ToggleHost() {
+        console.log("Toggle");
+        isHost = document.getElementById("host-toggle").checked;
+
+        document.getElementById("enter-host").style.display = isHost ? "block" : "none";
+        document.getElementById("enter-join").style.display = !isHost ? "block" : "none";
+    }
+</script>
+
+<h1>{{title}}</h1>
+
+<div id="enter">
+    <div id="enter-type" style="display:flex;">
+        <label>Host</label>
+        <label class="switch">
+            <input id="host-toggle" type="checkbox" onclick="ToggleHost()">
+            <span class="slider round"></span>
+        </label>
+    </div>
+    
+    <div id="enter-join">
+        <form action="" method="post">
+            {% csrf_token %}
+            {{ join_form }}
+            <input class="btn-primary" type="submit" value="Join" name="join_form">
+        </form>
+    </div>
+
+    <div id="enter-host" style="display:none;">
+        <form action="" method="post">
+            {% csrf_token %}
+            {{ host_form }}
+            <input class="btn-primary" type="submit" value="Host" name="host_form">
+        </form>
+    </div>
+</div>
+
+{% endblock %}
