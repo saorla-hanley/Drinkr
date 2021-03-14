@@ -1,0 +1,94 @@
+
+h1 {
+    font-family: Arial, Helvetica, sans-serif;
+    color: #111;
+}
+
+form {
+    display: block;
+    float: left;
+    width: 100%;
+}
+
+label {
+    font-family: Arial, Helvetica, sans-serif;
+    color: #111;
+    font-weight: bold;
+    font-size: 18px;
+    margin-left: 5px;
+    margin-right: 5px;
+    margin-bottom: 2px;
+}
+
+input {
+    border: none;
+    border-bottom: 1px solid #567fbd;
+    font-size: 20px;
+    outline: none;
+    margin-bottom: 1px;
+    width: 100%;
+}
+    input:focus{
+        border-bottom: 2px solid #567fbd;
+        outline: none;
+        margin-bottom: 0px;
+    }
+    input[type=button]:hover, input[type=submit]:hover {
+        filter: brightness(85%);
+        border-bottom: none;
+    }
+
+input[type=button], input[type=submit] {
+    background-color: #567fbd;
+    color: #eee;
+    padding: 5px 10px;
+    border-bottom: none;
+    margin-bottom: 0px;
+    cursor: pointer;
+    width: 30%;
+    height: 40px;
+}
+
+input[type=radio] + label {
+    display: inline-block;
+    border: 1px solid #567fbd;
+    cursor: pointer;
+    width: 30%;
+    height: 40px;
+    line-height: 40px;
+    text-align:center;
+}
+input[type="radio"]:checked + label{
+    border: 1px solid #567fbd;
+    background-color: #567fbd;
+    color: #eee;
+}
+
+.form-area {
+    display: flex;
+    float: top;
+}
+
+.form-input {
+    display: grid;
+    grid-template-rows: auto auto;
+    float: top;
+    margin: 20px 0px;
+}
+    
+.nodisplay {
+    display: none;
+}
+
+#div_form_selection {
+    display: inline-flex;
+    justify-content: space-between;
+    width: 100%;
+}
+
+#enter_forms {
+    width: 20%;
+    border: 2px solid #567fbd;
+    padding: 10px;
+    border-radius: 5px;
+}
