@@ -7,29 +7,91 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.js" integrity="sha512-aMGMvNYu8Ue4G+fHa359jcPb1u+ytAF+P2SCb+PxrjCdO3n3ZTxJ30zuH39rimUggmTwmh2u7wvQsDTHESnmfQ==" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="{{url_for('static', filename='content/site.css') }}">
     <script type="text/javascript" charset="utf-8">
+        var socket;
         $(document).ready(function() {
             // Connect to the Socket.IO server.
-            var socket = io();
+            socket = io();
             
             // When told to redirect by the server: do it
             socket.on('redirect', function (msg, cb) {
+
                 window.location = msg['url'];
             });
             
             socket.on('receive_game_data', function(msg, cb) {
                 console.log(msg['room_key']);
                 console.log(msg['players']);
+                updateGameData(msg);
             });
-
+            
             socket.emit('request_game_data', {
                 'room_key': sessionStorage['room_key'],
             });
         });
+
+        window.onbeforeunload = function(){
+            console.log("leaving");
+            socket.emit('leave', {
+                'room_key': sessionStorage['room_key'],
+                'leaving_id': sessionStorage['drinkr_id'],
+            });
+        };
+
+        function updateGameData(msg) {
+            $('#room_key').text(msg['room_key']);
+
+            updatePlayers(msg['players']);
+        }
+
+
+        function updatePlayers(playerList) {
+            $('#PlayerList').empty();
+            console.log(playerList);
+            console.log(sessionStorage['drinkr_id']);
+            playerList.forEach(element => {
+                addPlayer(element['username'], element['is_host'], false, element['id'] == sessionStorage['drinkr_id']);
+            });
+        }
+        function addPlayer(username, isHost, isActive, isSelf) {
+            classes = "";
+            classes += isHost == 1 ? "host" : "";
+            classes += isActive == 1 ? " active" : "";
+            classes += isSelf == 1 ? " self" : "";
+
+            host_icon = isHost == 1 ? "<img class='host-icon'> </img>" : "";
+
+            $('#PlayerList').append("<li class='" + classes + "'>" + username + " " + host_icon + "</li>");
+        }
+
     </script>
 </head>
 <body>
-    <p>
-        hello world
-    </p>
+    <div id="layout">
+        <div id="GameBoard">
+            
+        </div>
+        <div id="SideBar">
+            <div id="Metadata" class="side-panel">
+                <h3 id="room_key">
+                </h3>
+            </div>
+            <div id="Players" class="side-panel">
+                <h4>Player list</h4>
+                <ul id="PlayerList">
+                </ul>
+            </div>
+            <div id="ActiveRules" class="side-panel">
+                <h4>Active Rules</h4>
+                <ul>
+                    <li>
+                        This is an example of an active rule, look at it, enjoy it! I do sure hope the text wraps automatically and looks nice
+                    </li>
+                    <li>
+                        dummy 2
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

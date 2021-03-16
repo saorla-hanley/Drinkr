@@ -42,6 +42,7 @@
                     showError(msg['error_message']);
                 } else {
                     sessionStorage['room_key'] = msg['room_key'];
+                    sessionStorage['drinkr_id'] = msg['id'];
                     window.location = msg['redirect'];
                 }
             });
@@ -52,6 +53,7 @@
                 } else {
                     showError("");
                     sessionStorage['room_key'] = msg['room_key'];
+                    sessionStorage['drinkr_id'] = msg['id'];
                     window.location = msg['redirect'];
                 }
             });

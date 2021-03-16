@@ -11,7 +11,7 @@ DATABASE = 'rooms.db'
 
 from text import *
 from utilities import MAX_ATTEMPTS, random_room_key, isNoneOrEmptyOrSpace
-from procedures import room_u, room_f, player_u, player_f_by_room, player_d_by_room
+from procedures import room_u, room_f, player_u, player_f_by_room, player_d_by_room, player_f_sequence_by_room
 
 # Set this variable to "threading", "eventlet" or "gevent" to test the
 # different async modes, or leave it set to None for the application to choose
@@ -143,12 +143,17 @@ def join(message):
 
     # If all good, join the room
     join_room(room_key)
-    query_db(player_u(uuid.uuid4(), room_key, message['username']))
+
+    next_seq = query_db(player_f_sequence_by_room(room_key), one=True)['next_seq']
+    player_id = str(uuid.uuid4())
+
+    query_db(player_u(player_id, room_key, message['username'], False, next_seq))
     players = query_db(player_f_by_room(room_key))
 
     session['receive_count'] = session.get('receive_count', 0) + 1    
     emit('room_join_response', {'success': True,
                                 'room_key': message['room_key'],
+                                'id': player_id,
                                 'players': players, 
                                 'redirect': url_for('game')})
     return
@@ -181,14 +186,19 @@ def host(message):
 
     # If empty room found, join the room and clear out any old players in case some remain
     join_room(room_key)
+    
     query_db(room_u(room_key, message['password']))
     query_db(player_d_by_room(room_key))
-    query_db(player_u(uuid.uuid4(), room_key, message['username']))
+
+    player_id = str(uuid.uuid4())
+
+    query_db(player_u(player_id, room_key, message['username'], True, 0))
     players = query_db(player_f_by_room(room_key))
     
     session['receive_count'] = session.get('receive_count', 0) + 1
     emit('room_host_response', {'success': True,
                                 'room_key': room_key,
+                                'id': player_id,
                                 'players': players, 
                                 'redirect': url_for('game')})
     return
@@ -203,11 +213,10 @@ def request_game_data(message):
 
 @socketio.event
 def leave(message):
-    leave_room(message['roomkey'])
+    leave_room(message['room_key'])
+    print("somebody left")
     session['receive_count'] = session.get('receive_count', 0) + 1
-#    emit('my_response',
-#         {'data': 'In rooms: ' + ', '.join(rooms()),
-#          'count': session['receive_count']})
+    
 
 
 @socketio.on('close_room')
