@@ -10,8 +10,10 @@ from flask_socketio import SocketIO, emit, join_room, leave_room, close_room, ro
 DATABASE = 'rooms.db'
 
 from text import *
-from utilities import MAX_ATTEMPTS, random_room_key, isNoneOrEmptyOrSpace
-from procedures import room_u, room_f, player_u, player_f_by_room, player_d_by_room, player_f_sequence_by_room
+from utilities import MAX_ATTEMPTS, random_room_key, isNoneOrEmptyOrSpace, random_roll
+from procedures import room_u, room_f, room_d, \
+    player_u, player_f_by_room, player_d_by_room, player_f_sequence_by_room, player_d, player_move, \
+    turn_u, turn_f, turn_iter
 
 # Set this variable to "threading", "eventlet" or "gevent" to test the
 # different async modes, or leave it set to None for the application to choose
@@ -97,21 +99,6 @@ def make_dicts(cursor, row):
 # -----------------------------------------------------------------------------------
 
 @socketio.event
-def my_event(message):
-    session['receive_count'] = session.get('receive_count', 0) + 1
-    emit('my_response',
-         {'data': message['data'], 'count': session['receive_count']})
-
-
-@socketio.event
-def my_broadcast_event(message):
-    session['receive_count'] = session.get('receive_count', 0) + 1
-    emit('my_response',
-         {'data': message['data'], 'count': session['receive_count']},
-         broadcast=True)
-
-
-@socketio.event
 def join(message):
     # Validate username is input
     if isNoneOrEmptyOrSpace(message['username']):
@@ -150,7 +137,6 @@ def join(message):
     query_db(player_u(player_id, room_key, message['username'], False, next_seq))
     players = query_db(player_f_by_room(room_key))
 
-    session['receive_count'] = session.get('receive_count', 0) + 1    
     emit('room_join_response', {'success': True,
                                 'room_key': message['room_key'],
                                 'id': player_id,
@@ -170,7 +156,7 @@ def host(message):
                                     'players': {}})
         return
 
-    # Try to find a new room with a random key
+    # Try to find a new room with a random key                                                                              To Do: replace rooms() with a database lookup + search for one at least 1 day old
     attempts = 0
     room_key = random_room_key()
     while room_key in rooms() and attempts < MAX_ATTEMPTS:
@@ -186,8 +172,9 @@ def host(message):
 
     # If empty room found, join the room and clear out any old players in case some remain
     join_room(room_key)
-    
+
     query_db(room_u(room_key, message['password']))
+    query_db(turn_u(room_key, "", 0, 0))
     query_db(player_d_by_room(room_key))
 
     player_id = str(uuid.uuid4())
@@ -195,46 +182,76 @@ def host(message):
     query_db(player_u(player_id, room_key, message['username'], True, 0))
     players = query_db(player_f_by_room(room_key))
     
-    session['receive_count'] = session.get('receive_count', 0) + 1
     emit('room_host_response', {'success': True,
                                 'room_key': room_key,
                                 'id': player_id,
                                 'players': players, 
-                                'redirect': url_for('game')})
+                                'redirect': url_for('game')}, room=room_key)
     return
+
 
 @socketio.event
 def request_game_data(message):
     room_key = message['room_key']
+    join_room(room_key)
+
+    # Get players in room, and the last roll
     players = query_db(player_f_by_room(room_key))
+    turn = query_db(turn_f(room_key), one=True)
     emit('receive_game_data', {'room_key': room_key,
-                               'players': players})
+                               'players': players, 
+                               'roll': turn}, room=room_key)
+
+
+@socketio.event
+def request_roll_data(message):
+    room_key = message['room_key']
+    rolling_id = message['rolling_id']
+
+    # Roll a dice
+    roll = random_roll()
+
+    # Move the player by the roll amount + update the turn
+    query_db(turn_iter(room_key, rolling_id, roll))
+    query_db(player_move(rolling_id, roll))
+
+    # Return new information about the turn
+    turn = query_db(turn_f(room_key), one=True)
+    emit('receive_roll_data', {'roll': turn}, room=room_key)
 
 
 @socketio.event
 def leave(message):
-    leave_room(message['room_key'])
-    print("somebody left")
-    session['receive_count'] = session.get('receive_count', 0) + 1
-    
+    room_key = message['room_key']
+    leave_room(room_key)
+
+    # Delete the player from the database + send new information about the current players and turn to all who are left
+    query_db(player_d(message['leaving_id']))
+    players = query_db(player_f_by_room(room_key))
+    turn = query_db(turn_f(room_key), one=True)
+    if len(players) == 0:
+        close_room(room_key)
+        query_db(room_d(room_key))
+    else:
+        emit('receive_game_data', {'room_key': room_key,
+                                   'players': players,
+                                   'roll': turn}, room=room_key)
+
+
 
 
 @socketio.on('close_room')
 def on_close_room(message):
-    session['receive_count'] = session.get('receive_count', 0) + 1
     emit('my_response', {'data': 'Room ' + message['room'] + ' is closing.',
                          'count': session['receive_count']},
          to=message['room'])
     close_room(message['room'])
 
-
 @socketio.event
 def my_room_event(message):
-    session['receive_count'] = session.get('receive_count', 0) + 1
     emit('my_response',
          {'data': message['data'], 'count': session['receive_count']},
          to=message['room'])
-
 
 @socketio.event
 def disconnect_request():
@@ -242,7 +259,6 @@ def disconnect_request():
     def can_disconnect():
         disconnect()
 
-    session['receive_count'] = session.get('receive_count', 0) + 1
     # for this emit we use a callback function
     # when the callback function is invoked we know that the message has been
     # received and it is safe to disconnect
@@ -250,11 +266,9 @@ def disconnect_request():
          {'data': 'Disconnected!', 'count': session['receive_count']},
          callback=can_disconnect)
 
-
 @socketio.event
 def my_ping():
     emit('my_pong')
-
 
 @socketio.event
 def connect():
@@ -263,7 +277,6 @@ def connect():
         if thread is None:
             thread = socketio.start_background_task(background_thread)
     emit('my_response', {'data': 'Connected', 'count': 0})
-
 
 @socketio.on('disconnect')
 def test_disconnect():

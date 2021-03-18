@@ -67,6 +67,26 @@ input[type="radio"]:checked + label{
     color: #eee;
 }
 
+ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    font-size: 20px;
+}
+li {
+    line-height: 24px;
+    font-size: 18px;
+}
+li.self {
+    color:#22a;
+}
+li.active {
+    margin-left: 5px;
+    color:#282;
+}
+
+
+
 .form-area {
     display: flex;
     float: top;
@@ -101,6 +121,17 @@ input[type="radio"]:checked + label{
     margin: 0px;
 }
 
+#GameBoard {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+
+    width: 80%;
+    height: 100vh;
+
+    margin: 0px;
+    padding: 0px;
+}
 #SideBar {
     position: absolute;
     right: 0px;
@@ -119,34 +150,38 @@ input[type="radio"]:checked + label{
     border-bottom: 1px solid #567fbd;
 }
 
-ul {
-    list-style-type: none;
-    margin: 0;
-    padding: 0;
-    font-size: 20px;
-}
-li {
-    line-height: 24px;
-    font-size: 18px;
-}
-li.host {
-    color:#a22;
-}
-li.host::marker {
-    width: 10px;
-}
-li.active {
-    
-    color:#282;
-}
-li.self {
-    
-    color:#22a;
-}
-
 .host-icon {
     content: url('../images/host.png');
     width: 24px;
     height: 24px;
     vertical-align: bottom;
+}
+
+#Metadata {
+    display: flex;
+}
+
+#last-roll {
+    position: absolute;
+    float: right;
+    top: 5px;
+    right: 8px;
+    border: 1px solid #567fbd;
+    border-radius: 0px 0px 0px 5px;
+    max-width: 150px;
+}
+
+.popup {
+    display: block;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    border: 1px solid #567fbd;
+    border-radius: 5px;
+    width: 500px;
+    height: 400px;
+}
+.hidden {
+    display: none;
 }

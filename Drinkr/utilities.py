@@ -9,3 +9,6 @@ def random_room_key():
 
 def isNoneOrEmptyOrSpace(string):
     return string is None or string.isspace() or string == ""
+
+def random_roll():
+    return random.choice([1, 2, 3, 4, 5, 6])

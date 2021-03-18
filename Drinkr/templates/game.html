@@ -8,22 +8,42 @@
     <link rel="stylesheet" href="{{url_for('static', filename='content/site.css') }}">
     <script type="text/javascript" charset="utf-8">
         var socket;
+        var players = {};
+
         $(document).ready(function() {
             // Connect to the Socket.IO server.
             socket = io();
             
             // When told to redirect by the server: do it
             socket.on('redirect', function (msg, cb) {
-
                 window.location = msg['url'];
             });
             
+            // When somebody joins / leaves
             socket.on('receive_game_data', function(msg, cb) {
-                console.log(msg['room_key']);
-                console.log(msg['players']);
+                players = {};
+                msg['players'].forEach(player => {
+                    players[player.id] = player;
+                });
+
                 updateGameData(msg);
+                updateRollData(msg['roll']);
             });
             
+            // When somebody has rolled
+            socket.on('receive_roll_data', function(msg, cb) {
+                updateRollData(msg['roll']);
+            });
+
+            // When submitting the form to join or host a game room, a web socket must be emitted to update the server
+            $('form#rollDice').submit(function(event) {
+                socket.emit('request_roll_data', {
+                    'room_key': sessionStorage['room_key'],
+                    'rolling_id': sessionStorage['drinkr_id'],
+                });
+                return false;
+            });
+
             socket.emit('request_game_data', {
                 'room_key': sessionStorage['room_key'],
             });
@@ -39,20 +59,38 @@
 
         function updateGameData(msg) {
             $('#room_key').text(msg['room_key']);
-
             updatePlayers(msg['players']);
         }
 
+        function updateRollData(turn) {
+            player_count = Object.keys(players).length;
+            sequence = turn['current_turn'] % player_count;
+            current = currentPlayer(sequence);
+            showCurrentPlayer(current);
+
+            if (turn['last_roller'] != "") {
+                rollValue = turn['last_roll'];
+
+                username = "[[Quitter]]";
+                if (turn['last_roller'] in players) {
+                    username = players[turn['last_roller']].username;
+                    players[turn['last_roller']].current_tile += turn[username];
+                }
+
+                showRoll(username, rollValue);
+                showPlayerPositions();
+            }
+        }
 
         function updatePlayers(playerList) {
             $('#PlayerList').empty();
             console.log(playerList);
             console.log(sessionStorage['drinkr_id']);
             playerList.forEach(element => {
-                addPlayer(element['username'], element['is_host'], false, element['id'] == sessionStorage['drinkr_id']);
+                addPlayer(element['id'], element['username'], element['is_host'], false, element['id'] == sessionStorage['drinkr_id']);
             });
         }
-        function addPlayer(username, isHost, isActive, isSelf) {
+        function addPlayer(id, username, isHost, isActive, isSelf) {
             classes = "";
             classes += isHost == 1 ? "host" : "";
             classes += isActive == 1 ? " active" : "";
@@ -60,20 +98,68 @@
 
             host_icon = isHost == 1 ? "<img class='host-icon'> </img>" : "";
 
-            $('#PlayerList').append("<li class='" + classes + "'>" + username + " " + host_icon + "</li>");
+            $('#PlayerList').append("<li class='" + classes + "' id='player_" + id + "'>" + username + " " + host_icon + "</li>");
         }
 
+        function showRoll(roller, val) {
+            $('#roller').text(roller);
+            $('#roll-value').text(val);
+            $('#last-roll-value').text(val);
+        }
+
+        function showCurrentPlayer(player) {
+            for (p in players) { 
+                $("#player_" + p).removeClass("active");
+            }
+            $("#player_" + player).addClass("active");
+
+            if (player != sessionStorage['drinkr_id']) {
+                $('#rollDicePopup').addClass("hidden");
+            } else {
+                $('#rollDicePopup').removeClass("hidden");
+            }
+        }
+
+        function showPlayerPositions() {
+
+        }
+
+        function currentPlayer(sequence) {
+            for (p in players) { 
+                if (players[p].sequence == sequence) {
+                    return p;
+                }
+            }
+            return null;
+        }
     </script>
 </head>
 <body>
     <div id="layout">
         <div id="GameBoard">
+            <div id="rollDicePopup" class="popup">
+                <form id="rollDice" method="POST" action='#'>
+                    <center><label>Your turn to roll!</label></center>
+                    <center><h1 id="roll-value"></h1></center>
+                    <input type="submit" value="submit" style="position: absolute; bottom: 5px; left: 50%; transform: translate(-50%, 0%);">
+                </form>
+            </div>
+
+
             
+
+
+            <div id="last-roll">
+                <center><label id="roller"></label></center>
+                <center><h1 id="last-roll-value"></h1></center>
+            </div>
         </div>
         <div id="SideBar">
             <div id="Metadata" class="side-panel">
-                <h3 id="room_key">
-                </h3>
+                <h4>
+                    Room key
+                </h4>
+                <h4 id="room_key" style="margin-left: 25px; font-weight: normal;"></h4>
             </div>
             <div id="Players" class="side-panel">
                 <h4>Player list</h4>
@@ -83,12 +169,7 @@
             <div id="ActiveRules" class="side-panel">
                 <h4>Active Rules</h4>
                 <ul>
-                    <li>
-                        This is an example of an active rule, look at it, enjoy it! I do sure hope the text wraps automatically and looks nice
-                    </li>
-                    <li>
-                        dummy 2
-                    </li>
+                    
                 </ul>
             </div>
         </div>
