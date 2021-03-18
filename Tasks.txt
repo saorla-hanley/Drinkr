@@ -14,7 +14,7 @@ All:
 	> Categories
 	> Joke telling
 	> Instant refill
-	> 
+	> Move by spaces (x N)
 
 Happy / communal:
 	> Erryone drink
